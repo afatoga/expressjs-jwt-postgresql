@@ -1,13 +1,15 @@
-const express = require('express')
+const express = require('express');
+const cors = require('cors');
 const bodyParser = require('body-parser');
-const app = express()
-const port = 3000
+const app = express();
+const port = 3939;
 const jwt = require("jsonwebtoken")
 const fs = require('fs')
 
 const pgp = require('pg-promise')(/* options */)
-const db = pgp('xxx')
+const db = pgp('postgres://vqcvimfq:OM72oLRg8sGS8S3WSU3XSsIruNXE6hR8@balarama.db.elephantsql.com:5432/vqcvimfq')
 
+app.use(cors());
 app.use(bodyParser.json())
 app.get('/', (req, res) => res.send('Hello World!'))
 
@@ -21,7 +23,7 @@ app.get('/readme', (req, res) => {
     res.json({ "message" : "This is open to the world!" })
 })
 
-app.post('/jwt', (req, res) => {
+app.post('/api/login', (req, res) => {
 
     db.one('SELECT password FROM public.user WHERE email = $1', req.body.email)
     .then(function (data) {
@@ -29,7 +31,7 @@ app.post('/jwt', (req, res) => {
         if (data.password == req.body.password) {
             let privateKey = "abc"; //fs.readFileSync('./private.pem', 'utf8');
             let token = jwt.sign({ "body": "stuff" }, privateKey, { algorithm: 'HS256', expiresIn: '7d'});
-            res.send(token);
+            res.status(200).json({token: token, email: req.body.email, name: req.body.email});
         } else {
             res.status(500).json({ error: "Username or password is wrong" });
         }
