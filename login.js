@@ -1,9 +1,7 @@
-const dotenv = require("dotenv");
-dotenv.config();
+"use strict";
+const express = require("express");
+let router = express.Router();
 
-const express = require('express');
-const router = express.Router();
-//const port = 3939;
 const jwt = require("jsonwebtoken");
 //const fs = require('fs');
 const bcrypt = require("bcryptjs");
@@ -17,7 +15,7 @@ const bcrypt = require("bcryptjs");
 
 router.post("/", (req, res) => {
     const email = req.body.email.toLowerCase();
-    db.one(`SELECT password, role_id FROM afatoga.user WHERE email = $1`, email)
+    req.db.one(`SELECT password, role_id FROM afatoga.user WHERE email = $1`, email)
       .then(function (data) {
         if (bcrypt.compareSync(req.body.password, data.password)) {
           let token = jwt.sign(
