@@ -20,7 +20,6 @@ router
       .then(function (data) {
         if (bcrypt.compareSync(req.body.password, data.password)) {
           let token = jwt.sign(
-              //check if role id is in token
             { app: "contacts-realm",
               role_id: data.role_id},
             process.env.JWT_SECRET,

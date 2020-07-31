@@ -4,8 +4,7 @@ const bodyParser = require("body-parser");
 const app = express();
 const person = require("./routes/person");
 const user = require("./routes/user");
-const monitor = require("pg-monitor");
-//const loadDb = require("./controllers/dbConnection");
+const loadDb = require("./controllers/dbConnection");
 
 app.use(cors());
 app.use(bodyParser.json());
