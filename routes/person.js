@@ -205,6 +205,91 @@ router
       });
   });
 
+  router
+  .route("/contact_item")
+  .post((req, res) => {
+    const reqData = req.body;
+    let returningData = {};
+  
+    db.task(async (t) => {
+      if (reqData.action === "save") {
+        // check duplicity
+        const currentDBData = await t.oneOrNone(
+          `SELECT id FROM $(contact_type_name~) 
+          WHERE $(contact_type_name~) = $(value)`,
+          {
+            contact_type_name: reqData.contact_type_name,
+            value: reqData.contact_value,
+          }
+        );
+          // if selects 0 rows, then currentDBData = null
+        if (currentDBData !== null && !isNaN(currentDBData.id)) {
+          return res.status(403).json({ success: false, error: "Contact already exists" });
+        }
+  
+        const response = await t.oneOrNone(
+          `INSERT INTO $(contact_type_name~) 
+          ($(contact_type_name~)) 
+          VALUES 
+          ($(value))
+          RETURNING $(contact_type_name~).id`,
+          {
+            contact_type_name: reqData.contact_type_name,
+            value: reqData.contact_value,
+          }
+        );
+        // env: 1, 2, 3; describe what these numbers mean
+        const contact_type_id = reqData.contact_type_name === "email" ? 1 : 2;
+        if (response.id > 0) {
+          returningData = {
+            person_id: reqData.person_id,
+            contact_type_id: contact_type_id,
+            contact_id: response.id,
+            contact_table_name: reqData.table_name
+          };
+  
+          await t.none(
+            `INSERT INTO $(contact_table_name~) 
+            ("person_id", "contact_type_id", "contact_id") 
+            VALUES 
+            ($(person_id), $(contact_type_id), $(contact_id))`,
+            returningData
+          );
+        } else {
+          // error while saving
+          return res.status(400).json({ success: false, error: "Unable to save item" });
+        }
+      } else if (reqData.action === "validate") {
+        const response = await t.oneOrNone(
+          `INSERT INTO validation_log ("relation_table_name","item_id") VALUES ($(contact_table_name), $(itemId)) RETURNING validation_log.id`,
+          {
+            contact_table_name: reqData.table_name,
+            itemId: reqData.contact_item_id,
+          }
+        );
+  
+        returningData = { validation_request_id: response.id };
+  
+        await t.none(
+          `UPDATE $(contact_table_name~) SET validation_request_id = $(validation_request_id) WHERE person_id = $(person_id) AND contact_id = $(contact_item_id)`,
+          {
+            contact_table_name: reqData.table_name,
+            validation_request_id: response.id,
+            person_id: reqData.person_id,
+            contact_item_id: reqData.contact_item_id,
+          }
+        );
+      }
+    })
+      .then(() => {
+        return res.status(200).json({ success: true, data: returningData });
+      })
+      .catch((error) => {
+        console.log("ERROR:", error);
+        return res.status(500).json({ error: "Connection failed" });
+      });
+  });
+
 module.exports = router;
 //res.send("hi get /things/cars/" + req.params.carid);
 
