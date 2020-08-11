@@ -175,11 +175,23 @@ router
   .route("/list")
   .get((req, res) => {
     db.manyOrNone(
-      `SELECT person.id, names, surname, string_agg(org.name, ', ') orglist
-      FROM afatoga.person
-      LEFT OUTER JOIN afatoga.person_org ON person.id = person_org.person_id
-      LEFT OUTER JOIN afatoga.org ON person_org.org_id = org.id
-      GROUP BY person.id
+      `SELECT person.id, names, surname, contact_email.email, contact_phone.phone_number, org_join.orglist
+      FROM person
+      LEFT JOIN (SELECT DISTINCT ON (contact_person.person_id) 
+                  contact_person.person_id, email.email 
+                FROM contact_person
+                LEFT JOIN email ON contact_person.contact_id = email.id AND contact_type_id = 1
+                WHERE email IS NOT NULL) as contact_email ON contact_email.person_id = person.id
+      LEFT JOIN (SELECT DISTINCT ON (contact_person.person_id) 
+                  contact_person.person_id, phone_number.phone_number 
+                FROM contact_person
+                LEFT JOIN phone_number ON contact_person.contact_id = phone_number.id AND contact_type_id = 2
+                WHERE phone_number IS NOT NULL) as contact_phone ON contact_phone.person_id = person.id
+      LEFT JOIN (SELECT person_id, string_agg(org.name, ', ') orglist
+                 FROM person_org
+                 LEFT OUTER JOIN org ON person_org.org_id = org.id
+                 GROUP BY person_id) as org_join ON org_join.person_id = person.id
+      ORDER BY person.id
       LIMIT 10
       `
     )
@@ -195,3 +207,21 @@ router
 
 module.exports = router;
 //res.send("hi get /things/cars/" + req.params.carid);
+
+
+
+// `SELECT person.id, names, surname, string_agg(org.name, ', ') orglist, email.email
+//       FROM person
+//       LEFT OUTER JOIN person_org ON person.id = person_org.person_id
+//       LEFT OUTER JOIN org ON person_org.org_id = org.id
+//       INNER JOIN contact_person ON contact_person.person_id = person.id
+//       INNER JOIN email ON contact_person.contact_id = email.id
+//       GROUP BY person.id, email.email
+//       LIMIT 10
+//       `
+
+// LEFT JOIN (SELECT contact_person.person_id, phone_number.phone_number
+//   FROM contact_person
+//   LEFT JOIN phone_number ON contact_person.contact_id = phone_number.id
+//   WHERE contact_type_id = 2
+//   LIMIT 1) as contact_phone ON contact_phone.person_id = person.id
