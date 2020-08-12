@@ -1,13 +1,12 @@
 "use strict";
 
-const dotenv = require("dotenv");
-dotenv.config();
-const monitor = require("pg-monitor");
-
 const initOptions = {
  schema: 'afatoga',
 };
+
+const monitor = require("pg-monitor");
 monitor.attach(initOptions);
+
 const pgp = require("pg-promise")(initOptions);
 const cn = {
   host: process.env.DB_HOST,
@@ -19,12 +18,5 @@ const cn = {
 };
 
 const db = pgp(cn);
-
-// module.exports = function loadDb(req, res, next) {
-//   if (req.db === undefined) {
-//     req.db = pgp(cn);
-//   }
-//   next();
-// }
 
 module.exports = db;

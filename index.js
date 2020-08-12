@@ -4,16 +4,16 @@ const bodyParser = require("body-parser");
 const app = express();
 const person = require("./routes/person");
 const user = require("./routes/user");
-const loadDb = require("./controllers/dbConnection");
+//const loadDb = require("./controllers/dbConnection");
 
 app.use(cors());
 app.use(bodyParser.json());
 //app.use(loadDb);
-app.use("/api/user", user);
-app.use("/api/person", person);
+app.use("/user", user);
+app.use("/person", person);
 
-// const dotenv = require("dotenv");
-// dotenv.config();
+const dotenv = require("dotenv");
+dotenv.config();
 
 // //const port = 3939;
 // const jwt = require("jsonwebtoken");
